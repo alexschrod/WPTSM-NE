@@ -2,7 +2,7 @@
 // @name         WME Permalink to Serveral Maps — Norwegian Edition
 // @description  This script create buttons to permalink page on several naps.
 // @namespace    https://github.com/alexschrod/WPTSM-NE
-// @version      1.0
+// @version      1.1
 // @include      https://*.waze.com/editor/*
 // @include      https://*.waze.com/*/editor/*
 // @grant        none
@@ -11,7 +11,7 @@
 // Mini How-To:
 // 1) Install this script as Greasemonkey script or Tampermonkey script
 // 2) Click on desired permalink in the sidebar
-var pl2smne_version = "1.0";
+var pl2smne_version = "1.1";
 if ('undefined' == typeof __WMEPSM_NE__) {
   (function page_scope_runner() {
     // If we're _not_ already running in the page, grab the full source
@@ -29,14 +29,24 @@ if ('undefined' == typeof __WMEPSM_NE__) {
     // remove it to clean up.  Use setTimeout to force execution "outside" of
     // the user script scope completely.
     setTimeout(function() {
-          document.body.appendChild(script);
-          document.body.removeChild(script);
-        }, 0);
+      document.body.appendChild(script);
+      document.body.removeChild(script);
+    }, 0);
   })();
 
   // Stop running, because we know Greasemonkey actually runs us in
   // its sandbox.
   return;
+}
+
+// Extend Storage object to support serialization of objects
+Storage.prototype.setObject = function(key, value) {
+    this.setItem(key, JSON.stringify(value));
+}
+
+Storage.prototype.getObject = function(key) {
+    var value = this.getItem(key);
+    return value && JSON.parse(value);
 }
 
 var pi = 3.14159265358979;
@@ -484,99 +494,82 @@ function getQueryString(link, name)
     return link.substr(pos,len);
 }
 
-var googleButton = $('<button>Google</button>');
-googleButton.click(function(){
-    var href = $('.WazeControlPermalink a').attr('href');
+// ========================================================================= //
 
-    var lon = getQueryString(href, 'lon');
-    var lat = getQueryString(href, 'lat');
-    var zoom = parseInt(getQueryString(href, 'zoom'));
+function googleMap() {
+  var href = $('.WazeControlPermalink a').attr('href');
 
-    zoom = zoom > 6 ? 19 : zoom + 12;
-    var mapsUrl = 'https://maps.google.com/?ll=' + lat + ',' + lon + '&z=' + zoom;
-    window.open(mapsUrl,'_blank')
-});
+  var lon = getQueryString(href, 'lon');
+  var lat = getQueryString(href, 'lat');
+  var zoom = parseInt(getQueryString(href, 'zoom'));
 
-var bingButton = $('<button>Bing</button>');
-bingButton.click(function(){
-    var href = $('.WazeControlPermalink a').attr('href');
+  zoom = zoom > 6 ? 19 : zoom + 12;
+  var mapsUrl = 'https://maps.google.com/?ll=' + lat + ',' + lon + '&z=' + zoom;
+  window.open(mapsUrl,'_blank');
+}
 
-    var lon = getQueryString(href, 'lon');
-    var lat = getQueryString(href, 'lat');
-    var zoom = parseInt(getQueryString(href, 'zoom'));
+function googleBetaMap() {
+  var href = $('.WazeControlPermalink a').attr('href');
 
-    zoom = zoom > 6 ? 19 : zoom + 12;
-    var mapsUrl = ' http://www.bing.com/maps/default.aspx?v=2&cp=' + lat + '~' + lon + '&lvl=' + zoom + '&sty=h';
-    window.open(mapsUrl,'_blank')
-});
+  var lon = getQueryString(href, 'lon');
+  var lat = getQueryString(href, 'lat');
+  var zoom = parseInt(getQueryString(href, 'zoom'));
+  zoom = (zoom >= 8) ? 8 : zoom;
+  zoom = 70000/(Math.pow(2,zoom));
 
-var osmButton = $('<button>OSM</button>');
-osmButton.click(function(){
-    var href = $('.WazeControlPermalink a').attr('href');
+  //var mapsUrl = 'https://www.google.com/maps?t=m&ll='+lat+','+lon+'&spn='+zoomh+','+zoomv+'&output=classic';
+  var mapsUrl = 'https://www.google.com/maps/preview#!data=!1m4!1m3!1d'+zoom+'!2d'+lon+'!3d'+lat;
+  window.open(mapsUrl,'_blank');
+}
 
-    var lon = getQueryString(href, 'lon');
-    var lat = getQueryString(href, 'lat');
-    var zoom = parseInt(getQueryString(href, 'zoom'));
 
-    zoom = zoom > 6 ? 19 : zoom + 12;
-    var mapsUrl = 'http://www.openstreetmap.org/?lat=' + lat + '&lon=' + lon + '&zoom=' + zoom + '&layers=M';
-    //var mapsUrl = 'http://osm.clapps.net/?ll=' + lat + ',' + lon + '&z=' + zoom;
-    window.open(mapsUrl,'_blank')
-});
+function bingMap() {
+  var href = $('.WazeControlPermalink a').attr('href');
 
-var googleBetaButton = $('<button>Google β</button>');
-googleBetaButton.click(function(){
-    var href = $('.WazeControlPermalink a').attr('href');
+  var lon = getQueryString(href, 'lon');
+  var lat = getQueryString(href, 'lat');
+  var zoom = parseInt(getQueryString(href, 'zoom'));
 
-    var lon = getQueryString(href, 'lon');
-    var lat = getQueryString(href, 'lat');
-    var zoom = parseInt(getQueryString(href, 'zoom'));
-    zoom = (zoom >= 8) ? 8 : zoom;
-    zoom = 70000/(Math.pow(2,zoom));
+  zoom = zoom > 6 ? 19 : zoom + 12;
+  var mapsUrl = ' http://www.bing.com/maps/default.aspx?v=2&cp=' + lat + '~' + lon + '&lvl=' + zoom + '&sty=h';
+  window.open(mapsUrl,'_blank');
+}
 
-    //var mapsUrl = 'https://www.google.com/maps?t=m&ll='+lat+','+lon+'&spn='+zoomh+','+zoomv+'&output=classic';
-    var mapsUrl = 'https://www.google.com/maps/preview#!data=!1m4!1m3!1d'+zoom+'!2d'+lon+'!3d'+lat;
-    window.open(mapsUrl,'_blank')
-});
+function osmMap() {
+  var href = $('.WazeControlPermalink a').attr('href');
 
-var geoAdminButton = $('<button>geo.admin</button>');
-geoAdminButton.click(function(){
-    var href = $('.WazeControlPermalink a').attr('href');
+  var lon = getQueryString(href, 'lon');
+  var lat = getQueryString(href, 'lat');
+  var zoom = parseInt(getQueryString(href, 'zoom'));
 
-    var lon = getQueryString(href, 'lon');
-    var lat = getQueryString(href, 'lat');
-    var zoom = parseInt(getQueryString(href, 'zoom'))+5;
-    var phi1 = ((lat * 3600)-169028.66)/10000;
-    var lmd1 = ((lon * 3600)-26782.5)/10000;
-    var x = 200147.07 + 308807.95 * phi1 + 3745.25 * lmd1 * lmd1 + 76.63 * phi1 * phi1 + 119.79 * phi1 * phi1 * phi1 - 194.56 * lmd1 * lmd1 * phi1;
-    var y = 600072.37 + 211455.93  * lmd1 - 10938.51  * lmd1  * phi1 - 0.36 * lmd1  * phi1 * phi1 - 44.54 * lmd1 * lmd1 * lmd1;
-    var mapsUrl = 'http://map.geo.admin.ch/?Y='+y.toFixed(0)+'&X='+x.toFixed(0)+'&zoom='+zoom+'&bgLayer=ch.swisstopo.pixelkarte-farbe&time_current=latest&lang=de';
-    window.open(mapsUrl,'_blank')
-});
+  zoom = zoom > 6 ? 19 : zoom + 12;
+  var mapsUrl = 'http://www.openstreetmap.org/?lat=' + lat + '&lon=' + lon + '&zoom=' + zoom + '&layers=M';
+  window.open(mapsUrl,'_blank');
+}
 
-function vegvesen(urlBase)
+function vegvesenMap(urlBase)
 {
     var href = $('.WazeControlPermalink a').attr('href');
     var lon = getQueryString(href, 'lon');
     var lat = getQueryString(href, 'lat');
-    var zoom = parseInt(getQueryString(href, 'zoom'))+5;
+    var zoom = parseInt(getQueryString(href, 'zoom'));
     
     var zone = 33;
     var xy = new Array(2);
     zone = LatLonToUTMXY (DegToRad (lat), DegToRad (lon), zone, xy);
     
     var zoomWidths = new Array(11);
-    zoomWidths[15] = 22;
-    zoomWidths[14] = 44;
-    zoomWidths[13] = 88;
-    zoomWidths[12] = 176;
-    zoomWidths[11] = 352;
-    zoomWidths[10] = 704;
-    zoomWidths[9] = 1408;
-    zoomWidths[8] = 2816;
-    zoomWidths[7] = 5632;
-    zoomWidths[6] = 11264;
-    zoomWidths[5] = 22528;
+    zoomWidths[10] = 22;
+    zoomWidths[9] = 44;
+    zoomWidths[8] = 88;
+    zoomWidths[7] = 176;
+    zoomWidths[6] = 352;
+    zoomWidths[5] = 704;
+    zoomWidths[4] = 1408;
+    zoomWidths[3] = 2816;
+    zoomWidths[2] = 5632;
+    zoomWidths[1] = 11264;
+    zoomWidths[0] = 22528;
     
     var xyRatio = 0.5454545454545455;
     
@@ -590,23 +583,66 @@ function vegvesen(urlBase)
     window.open(mapsUrl, '_blank');
 }
 
-var vegvesenButton = $('<button>Vegvesen</button>');
-vegvesenButton.click(function(){
-    var urlBase = 'https://www.vegvesen.no/vegkart/vegkart/#!/kartlag:geodata/sok:{%lokasjon%,"objektTyper":[]}';
-    vegvesen(urlBase);
-});
+var mapFunctions =
+{
+  "Google": googleMap,
+  "GoogleBeta": googleBetaMap,
+  "Bing": bingMap,
+  "OSM": osmMap,
+  "Vegvesen": function(){vegvesenMap('https://www.vegvesen.no/vegkart/vegkart/#!/kartlag:geodata/sok:{%lokasjon%,"objektTyper":[]}');},
+  "VegvesenRoadTypes": function(){vegvesenMap('https://www.vegvesen.no/vegkart/vegkart/#!/kartlag:geodata/sok:{%lokasjon%,"objektTyper":[{"id":532,"antall":2000,"filter":[{"type":"Vegkategori","operator":"=","verdi":["Europaveg"]}]},{"id":532,"antall":2000,"filter":[{"type":"Vegkategori","operator":"=","verdi":["Fylkesveg"]}]},{"id":532,"antall":"500","filter":[{"type":"Vegkategori","operator":"=","verdi":["Riksveg"]}]},{"id":532,"antall":"1000","filter":[{"type":"Vegkategori","operator":"=","verdi":["Kommunal veg"]}]}]}');}
+}
 
-var vegvesenMedVeiTypeButton = $('<button>Vegvesen m/veitype</button>');
-vegvesenMedVeiTypeButton.click(function(){
-    var urlBase = 'https://www.vegvesen.no/vegkart/vegkart/#!/kartlag:geodata/sok:{%lokasjon%,"objektTyper":[{"id":532,"antall":2000,"filter":[{"type":"Vegkategori","operator":"=","verdi":["Europaveg"]}]},{"id":532,"antall":2000,"filter":[{"type":"Vegkategori","operator":"=","verdi":["Fylkesveg"]}]},{"id":532,"antall":"500","filter":[{"type":"Vegkategori","operator":"=","verdi":["Riksveg"]}]},{"id":532,"antall":"1000","filter":[{"type":"Vegkategori","operator":"=","verdi":["Kommunal veg"]}]}]}';
-    vegvesen(urlBase);
-});
+var mapFeatures =
+{
+  "Google":
+  {
+    "Name": "Google Maps",
+    "ShortName": "Google",
+    "Enabled": true
+  },
+  "GoogleBeta":
+  {
+    "Name": "Google Maps Beta",
+    "ShortName": "Google β",
+    "Enabled": false
+  },
+  "Bing":
+  {
+    "Name": "Bing Maps",
+    "ShortName": "Bing",
+    "Enabled": false
+  },
+  "OSM":
+  {
+    "Name": "OpenStreetMap",
+    "ShortName": "OSM",
+    "Enabled": false
+  },
+  "Vegvesen":
+  {
+    "Name": "Statens vegvesens vegkart",
+    "ShortName": "Vegvesen",
+    "Enabled": true
+  },
+  "VegvesenRoadTypes":
+  {
+    "Name": "Statens vegvesens vegkart med vegreferanser",
+    "ShortName": "Vegvesen m/vegreferanser",
+    "Enabled": true
+  }
+}
 
-$("#sidebar").append(googleButton);
-//$("#sidebar").append(googleBetaButton);
-$("#sidebar").append(osmButton);
-//$("#sidebar").append(bingButton);
-//$("#sidebar").append(geoAdminButton);
-$("#sidebar").append(vegvesenButton);
-$("#sidebar").append(vegvesenMedVeiTypeButton);
-$("#sidebar").append('<br><a href="https://github.com/alexschrod/WPTSM-NE" target="_blank">Permalink to Several Maps: Norwegian Edition v' + pl2smne_version + '</a>');
+var wmepsm_ne_sidebar = $('<div id="wmepmsm-ne-sidebar"></div>');
+$('#sidebar').append(wmepsm_ne_sidebar);
+
+for (map in mapFeatures) {
+  var mapObject = mapFeatures[map];
+  if (!mapObject.Enabled)
+    continue;
+  
+  var mapButton = $('<button title="' + mapObject.Name + '">' + mapObject.ShortName + '</button>');
+  mapButton.click(mapFunctions[map]);
+  wmepsm_ne_sidebar.append(mapButton);
+}
+wmepsm_ne_sidebar.append('<br><a href="https://github.com/alexschrod/WPTSM-NE" target="_blank">Permalink to Several Maps: Norwegian Edition v' + pl2smne_version + '</a>');
