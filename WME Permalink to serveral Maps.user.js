@@ -1,8 +1,9 @@
 // ==UserScript==
+// @author       Alexander Krivács Schrøder (alexschrod)
 // @name         WME Permalink to Serveral Maps — Norwegian Edition
 // @description  This script create buttons to permalink page on several naps.
 // @namespace    https://github.com/alexschrod/WPTSM-NE
-// @version      1.1
+// @version      1.2
 // @include      https://*.waze.com/editor/*
 // @include      https://*.waze.com/*/editor/*
 // @grant        none
@@ -11,7 +12,7 @@
 // Mini How-To:
 // 1) Install this script as Greasemonkey script or Tampermonkey script
 // 2) Click on desired permalink in the sidebar
-var pl2smne_version = "1.1";
+var pl2smne_version = "1.2";
 if ('undefined' == typeof __WMEPSM_NE__) {
   (function page_scope_runner() {
     // If we're _not_ already running in the page, grab the full source
@@ -633,6 +634,16 @@ var mapFeatures =
   }
 }
 
+// Restore saved settings
+var savedSettings = localStorage.getObject('wmepmsm_ne_settings');
+if (savedSettings != null) {
+  for (map in savedSettings.maps) {
+    if (mapFeatures[map] != null) {
+      mapFeatures[map].Enabled = savedSettings.maps[map].Enabled;
+    }
+  }
+}
+
 var wmepsm_ne_sidebar = $('<div id="wmepmsm-ne-sidebar"></div>');
 $('#sidebar').append(wmepsm_ne_sidebar);
 
@@ -646,3 +657,15 @@ for (map in mapFeatures) {
   wmepsm_ne_sidebar.append(mapButton);
 }
 wmepsm_ne_sidebar.append('<br><a href="https://github.com/alexschrod/WPTSM-NE" target="_blank">Permalink to Several Maps: Norwegian Edition v' + pl2smne_version + '</a>');
+
+// Save settings
+window.addEventListener("beforeunload", function() {
+  var savedSettings = {};
+  savedSettings.maps = {};
+  for (map in mapFeatures) {
+    var mapObject = mapFeatures[map];
+    savedSettings.maps[map] = {};
+    savedSettings.maps[map].Enabled = mapObject.Enabled;
+  }
+  localStorage.setObject('wmepmsm_ne_settings', savedSettings);
+}, true);
